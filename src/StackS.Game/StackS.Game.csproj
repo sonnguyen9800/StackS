@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Shared native game host: drives the native platform layer (native/stacks_platform.c) from C#.
+       Used by StackS.Desktop (Windows/macOS/Linux) and StackS.Mobile (Android/iOS). -->
+  <PropertyGroup>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\StackS.Kernel\StackS.Kernel.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,81 @@
+name: ci
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '8.0.x' }
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Kernel tests (C#), including golden replays
+        run: dotnet run --project tests/StackS.Tests -c Release
+      - name: Golden replays (JS reference sim)
+        run: node tools/check-js-goldens.mjs
+
+  native-aot-linux:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '8.0.x' }
+      - name: Publish CLI with NativeAOT
+        run: dotnet publish src/StackS.Cli -c Release -r linux-x64 -p:PublishAot=true -o build/cli
+      - name: Verify golden replays natively
+        run: ./build/cli/stacks verify content/replays
+
+  web:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '8.0.x' }
+      - run: dotnet workload install wasm-tools
+      - name: Publish C# runtime to WebAssembly
+        run: dotnet publish src/StackS.Web -c Release -o build/web
+      - name: Assemble the static editor site (editor + C# runtime + content)
+        run: |
+          mkdir -p build/site
+          cp -r editor/. build/site/
+          if [ -d build/web/wwwroot ]; then cp -r build/web/wwwroot build/site/runtime; else cp -r build/web build/site/runtime; fi
+          test -f build/site/runtime/_framework/dotnet.js
+          cp -r content build/site/content
+          touch build/site/.nojekyll
+      - uses: actions/upload-artifact@v4
+        with: { name: stacks-web-runtime, path: build/web }
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: build/site }
+
+  pages:
+    needs: [web, native-aot-linux]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions: { pages: write, id-token: write }
+    environment: { name: github-pages, url: '${{ steps.deploy.outputs.page_url }}' }
+    steps:
+      - uses: actions/configure-pages@v5
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+  desktop-linux:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '8.0.x' }
+      - name: Native toolchain and a virtual display
+        run: sudo apt-get update && sudo apt-get install -y cmake libgl1-mesa-dev libx11-dev libxi-dev libxcursor-dev libxrandr-dev xvfb libgl1-mesa-dri
+      - name: Build the desktop game
+        run: scripts/build-desktop.sh
+      - name: Smoke test - replay a golden run in the real renderer
+        run: |
+          xvfb-run -s "-screen 0 1280x720x24" build/desktop-jit/stacks-game --replay content/replays/route-default.replay.json --ticks 330 | tee game.log
+          grep -q "matches the recorded end state" game.log

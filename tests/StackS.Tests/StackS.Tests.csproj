@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Dependency-free test runner (dotnet run). Exit code 0 = all tests passed. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\StackS.Kernel\StackS.Kernel.csproj" />
+  </ItemGroup>
+</Project>

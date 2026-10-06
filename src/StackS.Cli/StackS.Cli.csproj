@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Native headless host. Publish with NativeAOT:
+       dotnet publish src/StackS.Cli -c Release -r <rid> -p:PublishAot=true -o build/cli
+       (rid: win-x64, osx-arm64, linux-x64, ...) -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>stacks</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\StackS.Kernel\StackS.Kernel.csproj" />
+  </ItemGroup>
+</Project>

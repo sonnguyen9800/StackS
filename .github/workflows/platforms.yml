@@ -1,0 +1,40 @@
+# Windows, macOS and Android builds. Not verified yet, so they only run when started by hand
+# (Actions tab -> platforms -> Run workflow). macOS minutes cost 10x on private repos.
+name: platforms
+on: workflow_dispatch
+
+jobs:
+  native-aot:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, rid: win-x64 }
+          - { os: macos-latest,   rid: osx-arm64 }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '8.0.x' }
+      - name: Publish CLI with NativeAOT
+        run: dotnet publish src/StackS.Cli -c Release -r ${{ matrix.rid }} -p:PublishAot=true -o build/cli
+      - name: Verify golden replays natively
+        run: ./build/cli/stacks verify content/replays
+        shell: bash
+
+  android:
+    runs-on: ubuntu-latest
+    continue-on-error: true   # NativeAOT on Android is experimental
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '8.0.x' }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: android-actions/setup-android@v3
+      - run: sdkmanager "ndk;26.3.11579264" "cmake;3.22.1"
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.7' }
+      - run: scripts/build-android.sh
+      - uses: actions/upload-artifact@v4
+        with: { name: stacks-android-apk, path: android/app/build/outputs/apk/debug/app-debug.apk }

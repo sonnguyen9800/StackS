@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.WebAssembly">
+  <!-- The C# runtime compiled to WebAssembly for the in-browser editor.
+       Build: dotnet publish src/StackS.Web -c Release -o build/web
+       The dev server serves build/web/wwwroot at /runtime/. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RootNamespace>StackS.Web</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\StackS.Kernel\StackS.Kernel.csproj" />
+  </ItemGroup>
+</Project>

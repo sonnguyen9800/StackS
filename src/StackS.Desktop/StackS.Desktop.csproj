@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Desktop game host (Windows, macOS, Linux). Build the native platform layer with CMake first
+       (see docs: "Build the desktop game"); the library is copied next to the executable. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>stacks-game</AssemblyName>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\StackS.Game\StackS.Game.csproj" />
+  </ItemGroup>
+  <!-- Copy the native platform library built by CMake next to the executable. -->
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\..\build\native\**\*stacks_platform.dll;$(MSBuildThisFileDirectory)..\..\build\native\**\libstacks_platform.so;$(MSBuildThisFileDirectory)..\..\build\native\**\libstacks_platform.dylib"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="%(Filename)%(Extension)" Visible="false" />
+  </ItemGroup>
+</Project>

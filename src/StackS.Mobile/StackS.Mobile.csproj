@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Mobile game library (Android, iOS), compiled with NativeAOT into a native library that the
+       platform layer (native/stacks_platform.c) calls through stacks_configure().
+       Android: NativeLib=Shared, RID linux-bionic-arm64   (scripts/build-android.sh)
+       iOS:     NativeLib=Static, RID ios-arm64            (scripts/build-ios.sh) -->
+  <PropertyGroup>
+    <AssemblyName>stacks_game</AssemblyName>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\StackS.Game\StackS.Game.csproj" />
+    <EmbeddedResource Include="..\..\content\levels\starter.level.json" LogicalName="starter.level.json" />
+    <EmbeddedResource Include="..\..\content\levels\current.level.json" LogicalName="current.level.json"
+                      Condition="Exists('..\..\content\levels\current.level.json')" />
+  </ItemGroup>
+  <!-- iOS links the platform layer statically into the app: bind P/Invokes at link time. -->
+  <ItemGroup Condition="'$(NativeLib)' == 'Static'">
+    <DirectPInvoke Include="stacks_platform" />
+  </ItemGroup>
+</Project>

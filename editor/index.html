@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>StackS editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#dedbd5; --panel:#f3f1ed; --ink:#24222b; --muted:#66636d; --line:#c4c0b8;
+  --accent:#4b47b8; --accent-soft:#e3e2f6; --ok:#2f7d6b; --bad:#b8382c; --bezel:#2b2a33;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#17161c; --panel:#211f28; --ink:#ebe9f2; --muted:#a3a0ad; --line:#3a3744;
+    --accent:#9c97ff; --accent-soft:#2c2a45; --ok:#5fc7a8; --bad:#ff7d6e; --bezel:#0f0e13;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#17161c; --panel:#211f28; --ink:#ebe9f2; --muted:#a3a0ad; --line:#3a3744;
+  --accent:#9c97ff; --accent-soft:#2c2a45; --ok:#5fc7a8; --bad:#ff7d6e; --bezel:#0f0e13;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+h1,h2,button,.hud{font-family:"Chakra Petch",system-ui,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+header h1{font-size:17px;font-weight:600;margin:0 14px 0 0;letter-spacing:.02em}
+header .spacer{flex:1}
+header label{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted)}
+button{font-size:13px;font-weight:500;padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);cursor:pointer}
+button:hover{border-color:var(--accent)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;min-width:118px}
+main{display:grid;grid-template-columns:210px minmax(0,1fr) 270px;gap:14px;padding:14px;max-width:1440px;margin:0 auto}
+@media (max-width:920px){main{grid-template-columns:1fr}.center{order:-1}}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px}
+.panel h2{font-size:14px;font-weight:600;margin:0 0 8px}
+.tools{display:flex;flex-direction:column;gap:5px}
+.tools button{text-align:left;display:flex;align-items:center;gap:8px}
+.sw{width:11px;height:11px;border-radius:2px;flex:none}
+.viewport{position:relative;padding:10px;border-radius:14px;background:var(--bezel)}
+.screen{position:relative;border-radius:6px;overflow:hidden;background:#000}
+canvas{display:block;width:100%;height:auto;image-rendering:pixelated;touch-action:none}
+.hud{position:absolute;left:10px;top:8px;color:#fff;font-size:14px;font-weight:600;text-shadow:0 1px 2px #000;pointer-events:none}
+.banner{position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:#fff;font:600 28px "Chakra Petch",sans-serif;text-shadow:0 2px 4px #000;pointer-events:none}
+.touch{position:absolute;left:10px;right:10px;bottom:10px;display:none;justify-content:space-between;align-items:flex-end;pointer-events:none}
+.playing .touch{display:flex}
+.pad{display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(2,46px);gap:4px;pointer-events:auto}
+.touch button{padding:0;font-size:18px;background:rgba(0,0,0,.45);color:#fff;border-color:rgba(255,255,255,.35);user-select:none;-webkit-user-select:none;touch-action:none}
+.touch .jump{width:72px;height:72px;border-radius:50%;pointer-events:auto}
+.legend{color:var(--muted);font-size:12.5px;margin:8px 2px 0}
+.row{display:grid;grid-template-columns:92px 1fr 44px;gap:6px;align-items:center;font-size:13px;margin-bottom:6px}
+.row output{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.fields{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}
+.field{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:2px}
+input[type=number],input[type=text],select,textarea{font:inherit;font-size:13px;width:100%;padding:4px 6px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--ink)}
+.empty{color:var(--muted);font-size:13px;margin:0}
+#log{height:170px;overflow:auto;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:6px 8px;white-space:pre-wrap;word-break:break-word}
+#console{margin-top:6px;font-family:ui-monospace,Menlo,Consolas,monospace}
+.ok{color:var(--ok)} .err{color:var(--bad)} .dim{color:var(--muted)}
+#verifyOut{font-size:13px;margin-top:8px}
+dialog{border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);width:min(640px,92vw);padding:14px}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog textarea{height:300px;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.badge{font-size:12px;padding:3px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted)}
+.badge.cs{border-color:var(--ok);color:var(--ok)}
+p.note{font-size:12.5px;color:var(--muted);margin:6px 0 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>StackS</h1>
+  <span id="rtBadge" class="badge">loading runtime…</span>
+  <button id="playBtn" class="primary">Play (Tab)</button>
+  <button id="undoBtn">Undo</button>
+  <button id="redoBtn">Redo</button>
+  <button id="ioBtn">Export / import</button>
+  <button id="resetBtn">Reset level</button>
+  <button id="goldenBtn">Save run as golden test</button>
+  <span class="spacer"></span>
+  <label><input type="checkbox" id="ps1" checked> PS1 look</label>
+</header>
+
+<main>
+  <div class="col">
+    <section class="panel">
+      <h2>Build</h2>
+      <div class="tools" id="tools"></div>
+      <p class="note">Pick a part, then click in the scene to place it. Esc returns to Select.</p>
+    </section>
+    <section class="panel">
+      <h2>Tuning</h2>
+      <div id="tuning"></div>
+      <p class="note">Works during play too. Changes are recorded so replays stay exact.</p>
+    </section>
+  </div>
+
+  <div class="col center">
+    <div class="viewport" id="viewport">
+      <div class="screen">
+        <canvas id="cv" width="427" height="240"></canvas>
+        <div class="hud" id="hud"></div>
+        <div class="banner" id="banner">Goal reached</div>
+        <div class="touch">
+          <div class="pad">
+            <span></span><button data-bit="4" aria-label="Forward">&#9650;</button><span></span>
+            <button data-bit="1" aria-label="Left">&#9664;</button><button data-bit="8" aria-label="Back">&#9660;</button><button data-bit="2" aria-label="Right">&#9654;</button>
+          </div>
+          <button class="jump" data-bit="16">Jump</button>
+        </div>
+      </div>
+    </div>
+    <p class="legend">Edit: drag to orbit, Shift+drag or right-drag to pan, wheel to zoom. Arrow keys move the selected part on the grid, Q/E move it down/up, Delete removes it, Ctrl+D duplicates, Ctrl+Z undoes. Play: WASD or arrows to run, Space to jump, Tab to stop.</p>
+  </div>
+
+  <div class="col">
+    <section class="panel">
+      <h2>Inspector</h2>
+      <div id="inspector"></div>
+    </section>
+    <section class="panel">
+      <h2>Replay check</h2>
+      <button id="verifyBtn">Verify last run</button>
+      <div id="verifyOut" class="dim">Play the level, stop, then verify. The run is re-simulated headless from its recorded inputs and must end in the identical state.</div>
+    </section>
+    <section class="panel">
+      <h2>Console</h2>
+      <div id="log"></div>
+      <input id="console" type="text" placeholder="type help and press Enter" autocomplete="off" spellcheck="false">
+    </section>
+  </div>
+</main>
+
+<dialog id="io">
+  <h2 style="margin:0 0 8px;font-size:15px">Level file</h2>
+  <textarea id="ioText" spellcheck="false"></textarea>
+  <div class="btnrow">
+    <button id="ioCopy">Copy</button>
+    <button id="ioLoad" class="primary">Load this level</button>
+    <button id="ioClose">Close</button>
+  </div>
+  <p class="note">This JSON is the whole level. With the dev server running, the level also autosaves to content/levels/current.level.json.</p>
+</dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script type="module" src="./editor.js"></script>
+</body>
+</html>
